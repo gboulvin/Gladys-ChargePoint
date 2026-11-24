@@ -1,0 +1,782 @@
+{
+  "manifest_version": 1,
+  "type": "device",
+  "name": "ChargePoint",
+  "description": {
+    "en": "Control your ChargePoint home chargers and follow public stations.",
+    "fr": "Pilotez vos bornes ChargePoint et suivez les bornes publiques.",
+    "de": "Steuern Sie Ihre ChargePoint-Wallboxen und verfolgen Sie Ladesäulen.",
+    "es": "Controle sus cargadores ChargePoint y siga estaciones públicas."
+  },
+  "version": "0.0.0",
+  "docker_image": "ghcr.io/gboulvin/gladys-chargepoint:0.0.0",
+  "gladys_version": ">=5.1.0",
+  "cover_image": "https://raw.githubusercontent.com/gboulvin/Gladys-ChargePoint/main/cover.png",
+  "categories": ["energy"],
+  "transports": ["cloud"],
+  "config_schema": [
+    {
+      "key": "intro",
+      "type": "section",
+      "label": {
+        "en": "ChargePoint account",
+        "fr": "Compte ChargePoint",
+        "de": "ChargePoint-Konto",
+        "es": "Cuenta ChargePoint"
+      },
+      "description": {
+        "en": "Sign in with the e-mail and password of your ChargePoint app. If ChargePoint asks for a captcha, sign in on chargepoint.com in a browser and paste the coulomb_sess cookie in the Session token field instead (see the documentation). The integration keeps the session renewed by itself.",
+        "fr": "Connectez-vous avec l'e-mail et le mot de passe de votre application ChargePoint. Si ChargePoint demande un captcha, connectez-vous sur chargepoint.com dans un navigateur et collez plutôt le cookie coulomb_sess dans le champ Jeton de session (voir la documentation). L'intégration renouvelle ensuite la session toute seule.",
+        "de": "Melden Sie sich mit der E-Mail und dem Passwort Ihrer ChargePoint-App an. Verlangt ChargePoint ein Captcha, melden Sie sich in einem Browser auf chargepoint.com an und fügen Sie stattdessen das Cookie coulomb_sess in das Feld Sitzungstoken ein (siehe Dokumentation). Die Integration erneuert die Sitzung danach selbst.",
+        "es": "Inicie sesión con el correo y la contraseña de su aplicación ChargePoint. Si ChargePoint pide un captcha, inicie sesión en chargepoint.com en un navegador y pegue la cookie coulomb_sess en el campo Token de sesión (vea la documentación). La integración renueva la sesión por sí sola."
+      },
+      "links": [
+        {
+          "url": "https://www.chargepoint.com",
+          "label": {
+            "en": "ChargePoint website",
+            "fr": "Site ChargePoint",
+            "de": "ChargePoint-Website",
+            "es": "Sitio de ChargePoint"
+          }
+        }
+      ]
+    },
+    {
+      "key": "username",
+      "type": "string",
+      "label": {
+        "en": "E-mail or username",
+        "fr": "E-mail ou identifiant",
+        "de": "E-Mail oder Benutzername",
+        "es": "Correo o usuario"
+      },
+      "placeholder": {
+        "en": "e.g. me@example.com",
+        "fr": "ex. moi@exemple.fr",
+        "de": "z. B. ich@beispiel.de",
+        "es": "p. ej. yo@ejemplo.es"
+      },
+      "required": true
+    },
+    {
+      "key": "password",
+      "type": "secret",
+      "label": {
+        "en": "Password",
+        "fr": "Mot de passe",
+        "de": "Passwort",
+        "es": "Contraseña"
+      },
+      "description": {
+        "en": "Used to open a session. Optional once a session token works.",
+        "fr": "Sert à ouvrir une session. Facultatif dès qu’un jeton de session fonctionne.",
+        "de": "Dient zum Öffnen einer Sitzung. Optional, sobald ein Sitzungstoken funktioniert.",
+        "es": "Sirve para abrir una sesión. Opcional cuando un token de sesión funciona."
+      },
+      "required": false
+    },
+    {
+      "key": "coulomb_token",
+      "type": "secret",
+      "label": {
+        "en": "Session token (coulomb_sess)",
+        "fr": "Jeton de session (coulomb_sess)",
+        "de": "Sitzungstoken (coulomb_sess)",
+        "es": "Token de sesión (coulomb_sess)"
+      },
+      "description": {
+        "en": "Only when the password login is blocked by a captcha: the value of the coulomb_sess cookie of chargepoint.com.",
+        "fr": "Uniquement si la connexion par mot de passe est bloquée par un captcha : la valeur du cookie coulomb_sess de chargepoint.com.",
+        "de": "Nur wenn die Anmeldung per Passwort durch ein Captcha blockiert wird: der Wert des Cookies coulomb_sess von chargepoint.com.",
+        "es": "Solo si el inicio de sesión con contraseña está bloqueado por un captcha: el valor de la cookie coulomb_sess de chargepoint.com."
+      },
+      "required": false
+    },
+    {
+      "key": "poll_frequency",
+      "type": "number",
+      "label": {
+        "en": "Refresh interval (s)",
+        "fr": "Intervalle de rafraîchissement (s)",
+        "de": "Aktualisierungsintervall (s)",
+        "es": "Intervalo de actualización (s)"
+      },
+      "description": {
+        "en": "How often ChargePoint is read, in seconds (one minute minimum).",
+        "fr": "Fréquence de lecture de ChargePoint, en secondes (une minute minimum).",
+        "de": "Wie oft ChargePoint gelesen wird, in Sekunden (mindestens eine Minute).",
+        "es": "Frecuencia de lectura de ChargePoint, en segundos (un minuto como mínimo)."
+      },
+      "required": false,
+      "default": 180,
+      "min": 60,
+      "max": 3600
+    },
+    {
+      "key": "public_stations",
+      "type": "string",
+      "label": {
+        "en": "Public stations to follow",
+        "fr": "Bornes publiques à suivre",
+        "de": "Zu verfolgende öffentliche Stationen",
+        "es": "Estaciones públicas a seguir"
+      },
+      "description": {
+        "en": "ChargePoint station IDs separated by commas. The \"Find stations nearby\" action gives them.",
+        "fr": "Identifiants de bornes ChargePoint séparés par des virgules. L'action « Trouver des bornes à proximité » les donne.",
+        "de": "ChargePoint-Stations-IDs, durch Kommas getrennt. Die Aktion „Stationen in der Nähe finden“ liefert sie.",
+        "es": "Identificadores de estaciones ChargePoint separados por comas. La acción «Buscar estaciones cercanas» los da."
+      },
+      "placeholder": {
+        "en": "e.g. 123456, 654321",
+        "fr": "ex. 123456, 654321",
+        "de": "z. B. 123456, 654321",
+        "es": "p. ej. 123456, 654321"
+      },
+      "required": false,
+      "default": ""
+    }
+  ],
+  "actions": [
+    {
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "timeout_seconds": 60
+    },
+    {
+      "key": "restart_charger",
+      "label": {
+        "en": "Restart a home charger",
+        "fr": "Redémarrer une borne domestique",
+        "de": "Heim-Ladestation neu starten",
+        "es": "Reiniciar un cargador doméstico"
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Home charger",
+            "fr": "Borne domestique",
+            "de": "Heim-Ladestation",
+            "es": "Cargador doméstico"
+          },
+          "required": true
+        }
+      ]
+    },
+    {
+      "key": "find_stations",
+      "label": {
+        "en": "Find stations nearby",
+        "fr": "Trouver des bornes à proximité",
+        "de": "Stationen in der Nähe finden",
+        "es": "Buscar estaciones cercanas"
+      },
+      "description": {
+        "en": "Lists the IDs of the public stations around a location, to follow them.",
+        "fr": "Liste les identifiants des bornes publiques autour d’un lieu, pour les suivre.",
+        "de": "Listet die IDs der öffentlichen Stationen um einen Ort auf, um sie zu verfolgen.",
+        "es": "Enumera los identificadores de las estaciones públicas alrededor de un lugar, para seguirlas."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "latitude",
+          "type": "number",
+          "label": {
+            "en": "Latitude",
+            "fr": "Latitude",
+            "de": "Breitengrad",
+            "es": "Latitud"
+          },
+          "placeholder": {
+            "en": "e.g. 48.8566",
+            "fr": "ex. 48.8566",
+            "de": "z. B. 48.8566",
+            "es": "p. ej. 48.8566"
+          },
+          "required": true,
+          "min": -90,
+          "max": 90
+        },
+        {
+          "key": "longitude",
+          "type": "number",
+          "label": {
+            "en": "Longitude",
+            "fr": "Longitude",
+            "de": "Längengrad",
+            "es": "Longitud"
+          },
+          "placeholder": {
+            "en": "e.g. 2.3522",
+            "fr": "ex. 2.3522",
+            "de": "z. B. 2.3522",
+            "es": "p. ej. 2.3522"
+          },
+          "required": true,
+          "min": -180,
+          "max": 180
+        },
+        {
+          "key": "radius",
+          "type": "number",
+          "label": {
+            "en": "Radius (m)",
+            "fr": "Rayon (m)",
+            "de": "Radius (m)",
+            "es": "Radio (m)"
+          },
+          "required": false,
+          "default": 1000,
+          "min": 100,
+          "max": 5000
+        }
+      ]
+    }
+  ],
+  "scene_triggers": [
+    {
+      "key": "charging_started",
+      "label": {
+        "en": "Charging started",
+        "fr": "Recharge démarrée",
+        "de": "Ladevorgang gestartet",
+        "es": "Carga iniciada"
+      },
+      "description": {
+        "en": "A home charger or the account (public station) starts charging.",
+        "fr": "Une borne domestique ou le compte (borne publique) commence à charger.",
+        "de": "Eine Heim-Ladestation oder das Konto (öffentliche Station) beginnt zu laden.",
+        "es": "Un cargador doméstico o la cuenta (estación pública) empieza a cargar."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Charger or account",
+            "fr": "Borne ou compte",
+            "de": "Ladestation oder Konto",
+            "es": "Cargador o cuenta"
+          }
+        }
+      ]
+    },
+    {
+      "key": "charging_stopped",
+      "label": {
+        "en": "Charging stopped",
+        "fr": "Recharge terminée",
+        "de": "Ladevorgang beendet",
+        "es": "Carga terminada"
+      },
+      "description": {
+        "en": "A charging session ends, with its energy, cost and duration.",
+        "fr": "Une session de recharge se termine, avec son énergie, son coût et sa durée.",
+        "de": "Ein Ladevorgang endet, mit Energie, Kosten und Dauer.",
+        "es": "Una sesión de carga termina, con su energía, coste y duración."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Charger or account",
+            "fr": "Borne ou compte",
+            "de": "Ladestation oder Konto",
+            "es": "Cargador o cuenta"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "energy_kwh",
+          "type": "number",
+          "label": {
+            "en": "Energy (kWh)",
+            "fr": "Énergie (kWh)",
+            "de": "Energie (kWh)",
+            "es": "Energía (kWh)"
+          }
+        },
+        {
+          "key": "cost",
+          "type": "number",
+          "label": {
+            "en": "Cost",
+            "fr": "Coût",
+            "de": "Kosten",
+            "es": "Coste"
+          }
+        },
+        {
+          "key": "duration_minutes",
+          "type": "number",
+          "label": {
+            "en": "Duration (min)",
+            "fr": "Durée (min)",
+            "de": "Dauer (min)",
+            "es": "Duración (min)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "vehicle_plugged_in",
+      "label": {
+        "en": "Vehicle plugged in",
+        "fr": "Véhicule branché",
+        "de": "Fahrzeug eingesteckt",
+        "es": "Vehículo conectado"
+      },
+      "description": {
+        "en": "The charging cable of a home charger is plugged into a vehicle.",
+        "fr": "Le câble d'une borne domestique est branché sur un véhicule.",
+        "de": "Das Ladekabel einer Heim-Ladestation wird an ein Fahrzeug angeschlossen.",
+        "es": "El cable de un cargador doméstico se conecta a un vehículo."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Home charger",
+            "fr": "Borne domestique",
+            "de": "Heim-Ladestation",
+            "es": "Cargador doméstico"
+          }
+        }
+      ]
+    },
+    {
+      "key": "vehicle_unplugged",
+      "label": {
+        "en": "Vehicle unplugged",
+        "fr": "Véhicule débranché",
+        "de": "Fahrzeug ausgesteckt",
+        "es": "Vehículo desconectado"
+      },
+      "description": {
+        "en": "The charging cable of a home charger is unplugged.",
+        "fr": "Le câble d'une borne domestique est débranché.",
+        "de": "Das Ladekabel einer Heim-Ladestation wird abgezogen.",
+        "es": "El cable de un cargador doméstico se desconecta."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Home charger",
+            "fr": "Borne domestique",
+            "de": "Heim-Ladestation",
+            "es": "Cargador doméstico"
+          }
+        }
+      ]
+    },
+    {
+      "key": "public_station_available",
+      "label": {
+        "en": "Public station available",
+        "fr": "Borne publique disponible",
+        "de": "Öffentliche Station frei",
+        "es": "Estación pública disponible"
+      },
+      "description": {
+        "en": "A followed public station had no free port and now has one.",
+        "fr": "Une borne publique suivie n'avait aucun point libre et en a un.",
+        "de": "Eine verfolgte öffentliche Station hatte keinen freien Anschluss und hat jetzt einen.",
+        "es": "Una estación pública seguida no tenía puntos libres y ahora tiene uno."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Station",
+            "fr": "Borne",
+            "de": "Station",
+            "es": "Estación"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "available_ports",
+          "type": "number",
+          "label": {
+            "en": "Free ports",
+            "fr": "Points libres",
+            "de": "Freie Anschlüsse",
+            "es": "Puntos libres"
+          }
+        }
+      ]
+    }
+  ],
+  "scene_actions": [
+    {
+      "key": "start_charging",
+      "label": {
+        "en": "Start charging",
+        "fr": "Lancer la recharge",
+        "de": "Laden starten",
+        "es": "Iniciar la carga"
+      },
+      "description": {
+        "en": "Starts a session on a home charger. Says whether it started (vehicle plugged in).",
+        "fr": "Démarre une session sur une borne domestique. Indique si elle a démarré (véhicule branché).",
+        "de": "Startet einen Ladevorgang an einer Heim-Ladestation. Meldet, ob er gestartet ist (Fahrzeug angeschlossen).",
+        "es": "Inicia una sesión en un cargador doméstico. Indica si se inició (vehículo conectado)."
+      },
+      "timeout_seconds": 90,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Home charger",
+            "fr": "Borne domestique",
+            "de": "Heim-Ladestation",
+            "es": "Cargador doméstico"
+          },
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "key": "started",
+          "type": "boolean",
+          "label": {
+            "en": "Charging started",
+            "fr": "Recharge démarrée",
+            "de": "Ladevorgang gestartet",
+            "es": "Carga iniciada"
+          }
+        }
+      ]
+    },
+    {
+      "key": "stop_charging",
+      "label": {
+        "en": "Stop charging",
+        "fr": "Arrêter la recharge",
+        "de": "Laden stoppen",
+        "es": "Detener la carga"
+      },
+      "description": {
+        "en": "Stops the session of a charger, or any session in progress when no device is chosen.",
+        "fr": "Arrête la session d'une borne, ou toute session en cours si aucun appareil n'est choisi.",
+        "de": "Beendet den Ladevorgang einer Station oder jeden laufenden, wenn kein Gerät gewählt ist.",
+        "es": "Detiene la sesión de un cargador, o cualquier sesión en curso si no se elige dispositivo."
+      },
+      "timeout_seconds": 90,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Charger or account",
+            "fr": "Borne ou compte",
+            "de": "Ladestation oder Konto",
+            "es": "Cargador o cuenta"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "key": "stopped",
+          "type": "boolean",
+          "label": {
+            "en": "Charging stopped",
+            "fr": "Recharge arrêtée",
+            "de": "Ladevorgang beendet",
+            "es": "Carga detenida"
+          }
+        }
+      ]
+    },
+    {
+      "key": "set_amperage_limit",
+      "label": {
+        "en": "Set the current limit",
+        "fr": "Régler la limite de courant",
+        "de": "Strombegrenzung einstellen",
+        "es": "Ajustar el límite de corriente"
+      },
+      "description": {
+        "en": "Sets the maximum charging current (the closest value the charger accepts).",
+        "fr": "Règle le courant de charge maximal (la valeur acceptée la plus proche).",
+        "de": "Stellt den maximalen Ladestrom ein (nächster von der Station akzeptierter Wert).",
+        "es": "Ajusta la corriente de carga máxima (el valor aceptado más cercano)."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Home charger",
+            "fr": "Borne domestique",
+            "de": "Heim-Ladestation",
+            "es": "Cargador doméstico"
+          },
+          "required": true
+        },
+        {
+          "key": "amperage",
+          "type": "number",
+          "label": {
+            "en": "Current (A)",
+            "fr": "Courant (A)",
+            "de": "Strom (A)",
+            "es": "Corriente (A)"
+          },
+          "required": true,
+          "min": 6,
+          "max": 80
+        }
+      ],
+      "outputs": [
+        {
+          "key": "amperage",
+          "type": "number",
+          "label": {
+            "en": "Applied current (A)",
+            "fr": "Courant appliqué (A)",
+            "de": "Angewendeter Strom (A)",
+            "es": "Corriente aplicada (A)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "set_charging_schedule",
+      "label": {
+        "en": "Set the charging schedule",
+        "fr": "Régler la programmation",
+        "de": "Ladeplan einstellen",
+        "es": "Ajustar la programación"
+      },
+      "description": {
+        "en": "Enables (with optional new times) or disables the schedule of a home charger.",
+        "fr": "Active (avec de nouveaux horaires facultatifs) ou désactive la programmation d'une borne.",
+        "de": "Aktiviert (optional mit neuen Zeiten) oder deaktiviert den Ladeplan einer Heim-Ladestation.",
+        "es": "Activa (con nuevos horarios opcionales) o desactiva la programación de un cargador."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Home charger",
+            "fr": "Borne domestique",
+            "de": "Heim-Ladestation",
+            "es": "Cargador doméstico"
+          },
+          "required": true
+        },
+        {
+          "key": "enabled",
+          "type": "boolean",
+          "label": {
+            "en": "Schedule enabled",
+            "fr": "Programmation activée",
+            "de": "Ladeplan aktiv",
+            "es": "Programación activada"
+          },
+          "default": true
+        },
+        {
+          "key": "weekday_start",
+          "type": "string",
+          "label": {
+            "en": "Weekdays: start",
+            "fr": "Semaine : début",
+            "de": "Wochentags: Beginn",
+            "es": "Entre semana: inicio"
+          },
+          "placeholder": {
+            "en": "e.g. 22:00",
+            "fr": "ex. 22:00",
+            "de": "z. B. 22:00",
+            "es": "p. ej. 22:00"
+          }
+        },
+        {
+          "key": "weekday_end",
+          "type": "string",
+          "label": {
+            "en": "Weekdays: end",
+            "fr": "Semaine : fin",
+            "de": "Wochentags: Ende",
+            "es": "Entre semana: fin"
+          },
+          "placeholder": {
+            "en": "e.g. 22:00",
+            "fr": "ex. 22:00",
+            "de": "z. B. 22:00",
+            "es": "p. ej. 22:00"
+          }
+        },
+        {
+          "key": "weekend_start",
+          "type": "string",
+          "label": {
+            "en": "Weekend: start",
+            "fr": "Week-end : début",
+            "de": "Wochenende: Beginn",
+            "es": "Fin de semana: inicio"
+          },
+          "placeholder": {
+            "en": "e.g. 22:00",
+            "fr": "ex. 22:00",
+            "de": "z. B. 22:00",
+            "es": "p. ej. 22:00"
+          }
+        },
+        {
+          "key": "weekend_end",
+          "type": "string",
+          "label": {
+            "en": "Weekend: end",
+            "fr": "Week-end : fin",
+            "de": "Wochenende: Ende",
+            "es": "Fin de semana: fin"
+          },
+          "placeholder": {
+            "en": "e.g. 22:00",
+            "fr": "ex. 22:00",
+            "de": "z. B. 22:00",
+            "es": "p. ej. 22:00"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "key": "enabled",
+          "type": "boolean",
+          "label": {
+            "en": "Schedule enabled",
+            "fr": "Programmation activée",
+            "de": "Ladeplan aktiv",
+            "es": "Programación activada"
+          }
+        }
+      ]
+    },
+    {
+      "key": "restart_charger",
+      "label": {
+        "en": "Restart a home charger",
+        "fr": "Redémarrer une borne",
+        "de": "Heim-Ladestation neu starten",
+        "es": "Reiniciar un cargador"
+      },
+      "description": {
+        "en": "Restarts a home charger remotely (it is offline for a few minutes).",
+        "fr": "Redémarre une borne domestique à distance (hors ligne quelques minutes).",
+        "de": "Startet eine Heim-Ladestation aus der Ferne neu (einige Minuten offline).",
+        "es": "Reinicia un cargador doméstico a distancia (sin conexión unos minutos)."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Home charger",
+            "fr": "Borne domestique",
+            "de": "Heim-Ladestation",
+            "es": "Cargador doméstico"
+          },
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "key": "restarted",
+          "type": "boolean",
+          "label": {
+            "en": "Restart sent",
+            "fr": "Redémarrage envoyé",
+            "de": "Neustart gesendet",
+            "es": "Reinicio enviado"
+          }
+        }
+      ]
+    }
+  ],
+  "widgets": [
+    {
+      "key": "charger",
+      "label": {
+        "en": "ChargePoint charger",
+        "fr": "Borne ChargePoint",
+        "de": "ChargePoint-Ladestation",
+        "es": "Cargador ChargePoint"
+      },
+      "description": {
+        "en": "Live power, energy and state of a home charger, with Start / Stop.",
+        "fr": "Puissance, énergie et état d'une borne en direct, avec Démarrer / Arrêter.",
+        "de": "Leistung, Energie und Status einer Ladestation live, mit Start / Stopp.",
+        "es": "Potencia, energía y estado de un cargador en directo, con Iniciar / Detener."
+      },
+      "icon": "battery-charging",
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Home charger",
+            "fr": "Borne domestique",
+            "de": "Heim-Ladestation",
+            "es": "Cargador doméstico"
+          },
+          "required": true
+        }
+      ],
+      "action_timeout_seconds": 30
+    },
+    {
+      "key": "account",
+      "label": {
+        "en": "ChargePoint account",
+        "fr": "Compte ChargePoint",
+        "de": "ChargePoint-Konto",
+        "es": "Cuenta ChargePoint"
+      },
+      "description": {
+        "en": "Balance, session in progress and followed public stations.",
+        "fr": "Solde, session en cours et bornes publiques suivies.",
+        "de": "Guthaben, laufende Sitzung und verfolgte öffentliche Stationen.",
+        "es": "Saldo, sesión en curso y estaciones públicas seguidas."
+      },
+      "icon": "credit-card",
+      "action_timeout_seconds": 30
+    }
+  ]
+}
