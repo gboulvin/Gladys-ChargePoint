@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-24
+
 ### Added
 
 - First release of the ChargePoint integration for Gladys Assistant (5.1.0 or
@@ -37,4 +39,5 @@ the notes of the version's GitHub Release.
 - English, French, German and Spanish everywhere: manifest, messages, widgets
   and documentation.
 
-[Unreleased]: https://github.com/gboulvin/Gladys-ChargePoint/commits/main
+[Unreleased]: https://github.com/gboulvin/Gladys-ChargePoint/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/gboulvin/Gladys-ChargePoint/releases/tag/v1.0.0

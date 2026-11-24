@@ -1,6 +1,6 @@
 {
   "name": "gladys-chargepoint",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "description": "ChargePoint integration for Gladys Assistant: home chargers, account and public stations.",
   "type": "module",
